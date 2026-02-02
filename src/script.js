@@ -1,5 +1,8 @@
 import * as THREE from 'three'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import GUI from 'lil-gui'
 
 const gui = new GUI()
@@ -10,17 +13,18 @@ const textureLoader = new THREE.TextureLoader()
 // raycasting for tooltips
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
-const tooltip = document.getElementById('tooltip')
+const tooltip = document.querySelector('.tooltip')
 
 // sun
 const sunGeometry = new THREE.SphereGeometry(3, 32, 32)
 const sunTexture = textureLoader.load('/textures/sun/sun-color.webp')
-const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture })
+const sunMaterial = new THREE.MeshBasicMaterial({ map: sunTexture, toneMapped: false })
 const sun = new THREE.Mesh(sunGeometry, sunMaterial)
 sun.name = 'Sun'
+sun.layers.enable(1) // add to bloom layer
 scene.add(sun)
 
-const sunLight = new THREE.PointLight('#fceaca', 600, 200)
+const sunLight = new THREE.PointLight('#fceaca', 400, 200)
 scene.add(sunLight)
 
 // controls
@@ -75,7 +79,7 @@ earth.rotation.z = Math.PI * (23.4 / 180) // 23.4° axial tilt
 const mars = createPlanet(0.098, '#ff3300', 9.04, scene, true, 'Mars', '/textures/mars/mars-color-1k.webp')
 mars.rotation.z = Math.PI * (25.2 / 180) // 25.2° axial tilt
 
-// earth's moon
+// luna
 const luna = createPlanet(0.05, '#888888', 0.3, earth, false, 'Moon', '/textures/luna/moon-color-512.webp')
 
 // mars' moons
@@ -83,7 +87,11 @@ const phobos = createPlanet(0.001, '#777777', 0.15, mars, false, 'Phobos')
 const deimos = createPlanet(0.0005, '#666666', 0.25, mars, false, 'Deimos')
 
 // asteroid belt
-const asteroidMaterial = new THREE.MeshStandardMaterial({})
+const asteroidMaterial = new THREE.MeshStandardMaterial({
+    color: 0x666666,
+    metalness: 0.3,
+    roughness: 0.8
+})
 const asteroids = new THREE.Group()
 scene.add(asteroids)
 
@@ -218,6 +226,22 @@ const renderer = new THREE.WebGLRenderer({ canvas })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
+// bloom effect
+const composer = new EffectComposer(renderer)
+const renderPass = new RenderPass(scene, camera)
+composer.addPass(renderPass)
+
+const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(sizes.width, sizes.height),
+    1.5, // strength
+    0.4, // radius
+    0.9 // threshold
+)
+composer.addPass(bloomPass)
+
+// set sun to bloom layer only
+camera.layers.enable(1)
+
 // load HDRI background asynchronously
 let hdriLoaded = false
 const pmremGenerator = new THREE.PMREMGenerator(renderer)
@@ -306,22 +330,25 @@ const tick = () => {
 
     // update planet orbits
     const orbitData = [
-        [mercury, 0.24, 6.78],
-        [venus, 0.615, 7.44],
-        [earth, 1, 8],
-        [mars, 1.88, 9.04],
-        [jupiter, 11.86, 16.4],
-        [saturn, 29.46, 25.08],
-        [uranus, 84.01, 44.38],
-        [neptune, 164.79, 66.14],
-        [ceres, 4.6, 12],
-        [pluto, 248, 98]
+        [mercury, 0.24, 6.78, 0.206],
+        [venus, 0.615, 7.44, 0.007],
+        [earth, 1, 8, 0.017],
+        [mars, 1.88, 9.04, 0.093],
+        [jupiter, 11.86, 16.4, 0.049],
+        [saturn, 29.46, 25.08, 0.056],
+        [uranus, 84.01, 44.38, 0.047],
+        [neptune, 164.79, 66.14, 0.009],
+        [ceres, 4.6, 12, 0.076],
+        [pluto, 248, 98, 0.249]
     ]
 
-    orbitData.forEach(([planet, period, distance]) => {
+    orbitData.forEach(([planet, period, semiMajorAxis, eccentricity]) => {
         const angle = planet.userData.startAngle + (elapsedTime / (period * (period < 15 ? 100 : 20))) * settingControls.speed
-        planet.position.x = Math.cos(angle) * distance
-        planet.position.z = Math.sin(angle) * distance
+        
+        // elliptical orbit calculation
+        const b = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity) // semi-minor axis
+        planet.position.x = Math.cos(angle) * semiMajorAxis
+        planet.position.z = Math.sin(angle) * b
     })
 
     // earth's moon
@@ -359,7 +386,7 @@ const tick = () => {
         tooltip.classList.remove('visible')
     }
 
-    renderer.render(scene, camera)
+    composer.render()
     requestAnimationFrame(tick)
 }
 
