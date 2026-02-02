@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 import GUI from 'lil-gui'
 
@@ -66,7 +65,7 @@ const createPlanet = (size, color, distance, parent = scene, storeForScale = tru
 }
 
 // terrestrial planets
-const mercury = createPlanet(0.11, '#aaaaaa', 6.78, scene, true, 'Mercury', '/textures/mercury/mercury-color-1k.webp')
+const mercury = createPlanet(0.07, '#aaaaaa', 6.78, scene, true, 'Mercury', '/textures/mercury/mercury-color-1k.webp')
 const venus = createPlanet(0.174, '#b38c5f', 7.44, scene, true, 'Venus', '/textures/venus/venus-color-1k.webp')
 venus.rotation.z = Math.PI * (177 / 180) // 177° retrograde tilt
 
@@ -80,8 +79,8 @@ mars.rotation.z = Math.PI * (25.2 / 180) // 25.2° axial tilt
 const luna = createPlanet(0.05, '#888888', 0.3, earth, false, 'Moon', '/textures/luna/moon-color-512.webp')
 
 // mars' moons
-const phobos = createPlanet(0.03, '#777777', 0.15, mars, false, 'Phobos')
-const deimos = createPlanet(0.02, '#666666', 0.25, mars, false, 'Deimos')
+const phobos = createPlanet(0.001, '#777777', 0.15, mars, false, 'Phobos')
+const deimos = createPlanet(0.0005, '#666666', 0.25, mars, false, 'Deimos')
 
 // asteroid belt
 const asteroidMaterial = new THREE.MeshStandardMaterial({})
@@ -164,7 +163,7 @@ scene.add(ring)
 
 // saturn moons
 const titan = createPlanet(0.075, '#ff9933', 1.2, saturn, false, 'Titan')
-const enceladus = createPlanet(0.03, '#ffffff', 0.5, saturn, false, 'Enceladus')
+const enceladus = createPlanet(0.007, '#ffffff', 0.5, saturn, false, 'Enceladus')
 
 // uranus rings
 const uranusRingGeometry = new THREE.RingGeometry(0.96, 1.4, 64)
@@ -178,7 +177,7 @@ scene.add(uranusRing)
 const triton = createPlanet(0.07, '#ddddff', 0.8, neptune, false, 'Triton')
 
 // dwarf planets
-const ceres = createPlanet(0.04, '#7b7b7b', 12, scene, true, 'Ceres')
+const ceres = createPlanet(0.015, '#7b7b7b', 12, scene, true, 'Ceres')
 const pluto = createPlanet(0.035, '#a0a0a0', 98, scene, true, 'Pluto')
 pluto.rotation.z = Math.PI * (120 / 180) // 120° axial tilt
 
@@ -214,23 +213,25 @@ const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 
 camera.position.set(0, 1.25, 14)
 scene.add(camera)
 
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
-
 // renderer
 const renderer = new THREE.WebGLRenderer({ canvas })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-// load HDRI background
+// load HDRI background asynchronously
+let hdriLoaded = false
 const pmremGenerator = new THREE.PMREMGenerator(renderer)
 const hdrLoader = new HDRLoader()
 hdrLoader.load('/textures/background/HDR_hazy_nebulae_4k.hdr', (texture) => {
-  const envMap = pmremGenerator.fromEquirectangular(texture).texture
-  scene.background = envMap
-  scene.environment = envMap
-  texture.dispose()
-  pmremGenerator.dispose()
+  // defer PMREM processing to next frame to avoid lag spike
+  requestAnimationFrame(() => {
+    const envMap = pmremGenerator.fromEquirectangular(texture).texture
+    scene.background = envMap
+    scene.environment = envMap
+    texture.dispose()
+    pmremGenerator.dispose()
+    hdriLoaded = true
+  })
 })
 
 // shadows
@@ -358,7 +359,6 @@ const tick = () => {
         tooltip.classList.remove('visible')
     }
 
-    controls.update()
     renderer.render(scene, camera)
     requestAnimationFrame(tick)
 }
