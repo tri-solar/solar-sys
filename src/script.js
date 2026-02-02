@@ -3,9 +3,7 @@ import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import GUI from 'lil-gui'
 
-const gui = new GUI()
 const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 const textureLoader = new THREE.TextureLoader()
@@ -27,26 +25,14 @@ scene.add(sun)
 const sunLight = new THREE.PointLight('#fceaca', 400, 200)
 scene.add(sunLight)
 
-// controls
+// settings
 const settingControls = {
     sunScale: 1,
     planetScale: 1,
     speed: 1
 }
 
-const scaleFolder = gui.addFolder('Scales')
-scaleFolder.add({ label: 'Planet sizes are ~1:3.7 billion from actual, Orbital distances are ~1:149 billion from actual' }, 'label').disable()
-scaleFolder.add(settingControls, 'sunScale', 0.1, 3, 0.1).onChange((value) => {
-    sun.scale.set(value, value, value)
-})
-
 const planetsToScale = []
-
-scaleFolder.add(settingControls, 'planetScale', 0.1, 3, 0.1).onChange((value) => {
-    planetsToScale.forEach(p => p.scale.set(value, value, value))
-})
-
-gui.add(settingControls, 'speed', 0, 10, 0.1).name('Orbital Speed')
 
 const createPlanet = (size, color, distance, parent = scene, storeForScale = true, name = '', textureFile = null) => {
     const geo = new THREE.SphereGeometry(size, 32, 32)
