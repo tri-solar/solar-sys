@@ -41,14 +41,13 @@ body
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0,0,0,0.7);
-    color: white;
+    color: rgb(229, 229, 229);
     padding: 12px 20px;
     border-radius: 6px;
     font-size: 13px;
     max-width: 90%;
     text-align: center;
     z-index: 50;
-    pointer-events: none;
 }
 
 .disclaimer p {
