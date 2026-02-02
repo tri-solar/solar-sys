@@ -1,0 +1,236 @@
+import * as THREE from 'three'
+import GUI from 'lil-gui'
+
+const gui = new GUI()
+const canvas = document.querySelector('canvas.webgl')
+const scene = new THREE.Scene()
+const textureLoader = new THREE.TextureLoader()
+
+// sun
+const sunGeometry = new THREE.SphereGeometry(3, 32, 32)
+const sunMaterial = new THREE.MeshBasicMaterial({ color: '#ffbb00' })
+const sun = new THREE.Mesh(sunGeometry, sunMaterial)
+scene.add(sun)
+
+const sunLight = new THREE.PointLight('#fceaca', 600, 200)
+scene.add(sunLight)
+
+// controls
+const settingControls = {
+    sunScale: 1,
+    planetScale: 1,
+    speed: 1
+}
+
+const scaleFolder = gui.addFolder('Scales')
+scaleFolder.add({ label: 'Planet sizes are ~1:3.7 billion from actual, Orbital distances are ~1:149 billion from actual' }, 'label').disable()
+scaleFolder.add(settingControls, 'sunScale', 0.1, 3, 0.1).onChange((value) => {
+    sun.scale.set(value, value, value)
+})
+
+const planetsToScale = []
+
+scaleFolder.add(settingControls, 'planetScale', 0.1, 3, 0.1).onChange((value) => {
+    planetsToScale.forEach(p => p.scale.set(value, value, value))
+})
+
+gui.add(settingControls, 'speed', 0, 10, 0.1).name('Orbital Speed')
+
+const createPlanet = (size, color, distance, parent = scene, storeForScale = true) => {
+    const geo = new THREE.SphereGeometry(size, 32, 32)
+    const mat = new THREE.MeshStandardMaterial({ color })
+    const mesh = new THREE.Mesh(geo, mat)
+    mesh.position.x = distance
+    mesh.userData.startAngle = Math.random() * Math.PI * 2
+    parent.add(mesh)
+    if (storeForScale) planetsToScale.push(mesh)
+    return mesh
+}
+
+// terrestrial planets
+const mercury = createPlanet(0.11, '#aaaaaa', 6.78)
+const venus = createPlanet(0.174, '#b38c5f', 7.44)
+const earth = createPlanet(0.184, '#0077ff', 8)
+const mars = createPlanet(0.098, '#ff3300', 9.04)
+
+// earth's moon
+const luna = createPlanet(0.05, '#888888', 0.3, earth)
+
+// mars' moons
+const phobos = createPlanet(0.03, '#777777', 0.15, mars)
+const deimos = createPlanet(0.02, '#666666', 0.25, mars)
+
+// asteroid belt
+const asteroidMaterial = new THREE.MeshStandardMaterial({})
+const asteroids = new THREE.Group()
+scene.add(asteroids)
+
+for (let i = 0; i < 1000; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const radius = 9.75 + Math.random() * 3
+    const x = Math.sin(angle) * radius
+    const z = Math.cos(angle) * radius
+
+    const scale = 0.01 + Math.random() * 0.015
+    const asteroidGeometry = new THREE.BoxGeometry(scale, scale * 1.2, scale * 1.1)
+    const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial)
+    asteroid.position.set(x, Math.random() * 0.4, z)
+    asteroid.rotation.x = (Math.random() - 0.5) * 0.4
+    asteroid.rotation.y = (Math.random() - 0.5) * 0.4
+    asteroid.rotation.z = (Math.random() - 0.5) * 0.4
+    asteroid.userData.startAngle = angle
+    asteroids.add(asteroid)
+}
+
+// gas giants
+const jupiter = createPlanet(2.024, '#7d4739', 16.4)
+const saturn = createPlanet(1.748, '#be9352', 25.08)
+const uranus = createPlanet(0.736, '#7fffd4', 44.38)
+const neptune = createPlanet(0.718, '#0000ff', 66.14)
+
+// jupiter moons
+const io = createPlanet(0.06, '#ffcc00', 0.4, jupiter)
+const europa = createPlanet(0.045, '#ccddff', 0.65, jupiter)
+const ganymede = createPlanet(0.075, '#aaaaaa', 1.0, jupiter)
+const callisto = createPlanet(0.07, '#888888', 1.5, jupiter)
+
+// saturns rings
+const ringGeometry = new THREE.RingGeometry(2.3, 3.7, 64)
+const ringMaterial = new THREE.MeshStandardMaterial({ color: '#d2b48c', side: THREE.DoubleSide })
+const ring = new THREE.Mesh(ringGeometry, ringMaterial)
+ring.rotation.x = -Math.PI / 2.5
+saturn.add(ring)
+
+// saturn moons
+const titan = createPlanet(0.075, '#ff9933', 1.2, saturn)
+const enceladus = createPlanet(0.03, '#ffffff', 0.5, saturn)
+
+// uranus rings
+const uranusRingGeometry = new THREE.RingGeometry(0.96, 1.4, 64)
+const uranusRingMaterial = new THREE.MeshStandardMaterial({ color: '#afeeee', side: THREE.DoubleSide })
+const uranusRing = new THREE.Mesh(uranusRingGeometry, uranusRingMaterial)
+uranusRing.rotation.x = -Math.PI / 2.5
+uranus.add(uranusRing)
+
+// neptune moon
+const triton = createPlanet(0.07, '#ddddff', 0.8, neptune)
+
+// dwarf planets
+const ceres = createPlanet(0.04, '#7b7b7b', 12)
+const pluto = createPlanet(0.035, '#a0a0a0', 98)
+
+// ambient light
+const ambientLight = new THREE.AmbientLight('#ffeddf', 0.025)
+scene.add(ambientLight)
+
+// sizing
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
+
+window.addEventListener('resize', () => {
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
+
+// camera
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
+camera.position.set(0, 1.25, 14)
+scene.add(camera)
+
+// renderer
+const renderer = new THREE.WebGLRenderer({ canvas })
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+// shadows
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
+// set up shadows for all celestial bodies
+const allBodies = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, ceres, pluto, luna, phobos, deimos, io, europa, ganymede, callisto, titan, enceladus, triton, ring, uranusRing]
+
+sunLight.castShadow = true
+sunLight.shadow.mapSize.width = 2048
+sunLight.shadow.mapSize.height = 2048
+sunLight.shadow.radius = 8
+
+allBodies.forEach(body => {
+    body.receiveShadow = true
+    body.castShadow = true
+})
+
+ring.castShadow = false
+uranusRing.castShadow = false
+
+// animation loop
+let startTime = performance.now()
+
+const tick = () => {
+    const elapsedTime = (performance.now() - startTime) * 0.001
+
+    // update asteroid belt
+    for(const asteroid of asteroids.children) {
+        const angle = asteroid.userData.startAngle + elapsedTime * (0.01 + asteroid.position.y * 0.01) * settingControls.speed
+        const radius = Math.sqrt(asteroid.position.x * asteroid.position.x + asteroid.position.z * asteroid.position.z)
+        asteroid.position.x = Math.cos(angle) * radius
+        asteroid.position.z = Math.sin(angle) * radius
+    }
+
+    // update planet orbits
+    const orbitData = [
+        [mercury, 0.24, 6.78],
+        [venus, 0.615, 7.44],
+        [earth, 1, 8],
+        [mars, 1.88, 9.04],
+        [jupiter, 11.86, 16.4],
+        [saturn, 29.46, 25.08],
+        [uranus, 84.01, 44.38],
+        [neptune, 164.79, 66.14],
+        [ceres, 4.6, 12],
+        [pluto, 248, 98]
+    ]
+
+    orbitData.forEach(([planet, period, distance]) => {
+        const angle = planet.userData.startAngle + (elapsedTime / (period * (period < 15 ? 100 : 20))) * settingControls.speed
+        planet.position.x = Math.cos(angle) * distance
+        planet.position.z = Math.sin(angle) * distance
+    })
+
+    // earth's moon
+    updateMoonOrbit(luna, earth, 0.0748, 0.3, elapsedTime)
+
+    // mars' moons
+    updateMoonOrbit(phobos, mars, 0.03, 0.15, elapsedTime)
+    updateMoonOrbit(deimos, mars, 0.07, 0.25, elapsedTime)
+
+    // jupiter's moons
+    updateMoonOrbit(io, jupiter, 0.004, 0.4, elapsedTime)
+    updateMoonOrbit(europa, jupiter, 0.009, 0.65, elapsedTime)
+    updateMoonOrbit(ganymede, jupiter, 0.022, 1.0, elapsedTime)
+    updateMoonOrbit(callisto, jupiter, 0.051, 1.5, elapsedTime)
+
+    // saturn's moons
+    updateMoonOrbit(titan, saturn, 0.038, 1.2, elapsedTime)
+    updateMoonOrbit(enceladus, saturn, 0.0074, 0.5, elapsedTime)
+
+    // neptune's moon
+    updateMoonOrbit(triton, neptune, 0.063, 0.8, elapsedTime)
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(tick)
+}
+
+const updateMoonOrbit = (moon, parent, period, distance, elapsedTime) => {
+    const angle = (elapsedTime / (period * 500)) * settingControls.speed
+    const orbitRadius = parent.geometry.parameters.radius * 2 + distance
+    moon.position.x = Math.cos(angle) * orbitRadius
+    moon.position.z = Math.sin(angle) * orbitRadius
+}
+
+tick()
