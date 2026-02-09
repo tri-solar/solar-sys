@@ -208,7 +208,7 @@ camera.position.set(0, 1.25, 14)
 scene.add(camera)
 
 // renderer
-const renderer = new THREE.WebGLRenderer({ canvas })
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
