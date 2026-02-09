@@ -15,7 +15,7 @@ export const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(sizes.width, sizes.height),
     1.5,
     0.4,
-    0.9 
+    0.85 
 )
 composer.addPass(bloomPass)
 

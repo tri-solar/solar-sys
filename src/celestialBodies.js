@@ -36,17 +36,21 @@ uvs.needsUpdate = true
 const ringTexture = textureLoader.load('/textures/saturn/2k_saturn_ring_alpha.png')
 ringTexture.wrapS = THREE.ClampToEdgeWrapping
 ringTexture.wrapT = THREE.RepeatWrapping
-ringTexture.colorSpace = THREE.SRGBColorSpace
 
 const ringMaterial = new THREE.MeshStandardMaterial({
   map: ringTexture,
   side: THREE.DoubleSide,
-  transparent: true
+  transparent: true,
+  alphaTest: 0.5,
+  metalness: 0.2,
+  roughness: 0.8
 })
 
 export const ring = new THREE.Mesh(ringGeometry, ringMaterial)
 ring.name = "Saturn's Rings"
 ring.rotation.x = -Math.PI / 2.5
+ring.castShadow = false
+ring.receiveShadow = false
 scene.add(ring)
 
 export const titan = createPlanet(0.075, '#ff9933', 1.2, saturn, false, 'Titan')

@@ -2,7 +2,7 @@ import { composer } from './effects.js'
 import { settingControls } from './utils.js'
 import { sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, ceres, pluto } from './planets.js'
 import { luna, phobos, deimos, io, europa, ganymede, callisto, titan, enceladus, triton, ring, uranusRing, asteroids } from './celestialBodies.js'
-import { updateTooltips } from './interactions.js'
+import { updateTooltips, updateCameraRotation } from './interactions.js'
 
 let startTime = performance.now()
 
@@ -52,6 +52,8 @@ export const updateMoonOrbit = (moon, parent, period, distance, elapsedTime) => 
 
 export const tick = () => {
     const elapsedTime = (performance.now() - startTime) * 0.001
+
+    updateCameraRotation()
 
     const allPlanets = [sun, mercury, venus, earth, mars, luna, phobos, deimos, jupiter, saturn, uranus, neptune, ceres, pluto, io, europa, ganymede, callisto, titan, enceladus, triton]
     allPlanets.forEach(planet => {

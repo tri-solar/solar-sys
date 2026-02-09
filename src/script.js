@@ -7,7 +7,7 @@ import { ambientLight, setupShadows } from './effects.js'
 
 import { tick } from './animation.js'
 
-const allBodies = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, ceres, pluto, luna, phobos, deimos, io, europa, ganymede, callisto, titan, enceladus, triton, ring, uranusRing]
+const allBodies = [mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, ceres, pluto, luna, phobos, deimos, io, europa, ganymede, callisto, titan, enceladus, triton, uranusRing]
 
 ring.castShadow = false
 uranusRing.castShadow = false
