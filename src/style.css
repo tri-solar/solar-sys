@@ -11,6 +11,11 @@ body
     overflow: hidden;
 }
 
+a {
+    color: #734dad;
+    text-decoration: none;
+}
+
 .webgl
 {
     position: fixed;
